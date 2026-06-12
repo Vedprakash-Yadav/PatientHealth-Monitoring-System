@@ -3,6 +3,7 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 import psycopg2
 import pandas as pd
+import os
 import threading
 import time
 import random
@@ -13,16 +14,10 @@ app.config['SECRET_KEY'] = 'secret'
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
-DB_CONFIG = {
-    'dbname': 'patient_monitoring',
-    'user': 'postgres',
-    'password': 'root',
-    'host': 'localhost',
-    'port': '5432'
-}
+DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_lJySqHx0Y8Md@ep-aged-fire-ai7o9kjo-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
 
 def get_db_connection():
-    return psycopg2.connect(**DB_CONFIG)
+    return psycopg2.connect(DATABASE_URL)
 
 # ALERT LOGIC
 def check_abnormal(v):
@@ -154,6 +149,7 @@ def simulator():
         time.sleep(3)
 
 # START
+socketio.start_background_task(simulator)
+
 if __name__ == "__main__":
-    socketio.start_background_task(simulator)
     socketio.run(app, debug=True)

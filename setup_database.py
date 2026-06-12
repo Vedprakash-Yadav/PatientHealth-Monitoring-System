@@ -1,39 +1,14 @@
 import psycopg2
+import os
 
-DB_CONFIG = {
-    'dbname': 'postgres',
-    'user': 'postgres',
-    'password': 'root',
-    'host': 'localhost',
-    'port': '5432'
-}
-
-def create_database():
-    conn = psycopg2.connect(**DB_CONFIG)
-    conn.autocommit = True
-    cur = conn.cursor()
-
-    cur.execute("SELECT 1 FROM pg_database WHERE datname = 'patient_monitoring'")
-    if not cur.fetchone():
-        cur.execute("CREATE DATABASE patient_monitoring")
-        print("✅ Database created")
-    else:
-        print("✅ Database already exists")
-
-    cur.close()
-    conn.close()
+DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_lJySqHx0Y8Md@ep-aged-fire-ai7o9kjo-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
 
 def create_table():
-    config = DB_CONFIG.copy()
-    config['dbname'] = 'patient_monitoring'
-
-    conn = psycopg2.connect(**config)
+    conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    cur.execute("DROP TABLE IF EXISTS patient_vitals")
-
     cur.execute("""
-    CREATE TABLE patient_vitals (
+    CREATE TABLE IF NOT EXISTS patient_vitals (
         id SERIAL PRIMARY KEY,
         patient_id INTEGER,
         patient_name VARCHAR(100),
@@ -72,6 +47,5 @@ def create_table():
     print("✅ Table ready")
 
 if __name__ == "__main__":
-    create_database()
     create_table()
     print("🚀 Setup complete")
