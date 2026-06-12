@@ -11,68 +11,91 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
+
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
+
 # ALERT LOGIC
 def check_abnormal(v):
-    if (v['heart_rate'] < 60 or v['heart_rate'] > 100 or
+    if (
+        v['heart_rate'] < 60 or
+        v['heart_rate'] > 100 or
         v['oxygen_level'] < 95 or
-        v['temperature'] < 36 or v['temperature'] > 37.5 or
-        v['bp_sys'] < 90 or v['bp_sys'] > 140):
+        v['temperature'] < 36 or
+        v['temperature'] > 37.5 or
+        v['bp_sys'] < 90 or
+        v['bp_sys'] > 140
+    ):
         return "Need Attention"
     return "Normal"
+
 
 # MAIN PAGE
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
 # INITIAL DATA
 @app.route("/api/all")
 def get_all():
     conn = get_db_connection()
-    df = pd.read_sql("""
-        SELECT DISTINCT ON (patient_id)
-        *
+
+    df = pd.read_sql(
+        """
+        SELECT DISTINCT ON (patient_id) *
         FROM patient_vitals
         ORDER BY patient_id, timestamp DESC
-    """, conn)
+        """,
+        conn
+    )
+
     conn.close()
 
     data = []
+
     for _, r in df.iterrows():
         d = dict(r)
 
-        d["blood_pressure"] = f"{r['blood_pressure_systolic']}/{r['blood_pressure_diastolic']}"
+        d["blood_pressure"] = (
+            f"{r['blood_pressure_systolic']}/"
+            f"{r['blood_pressure_diastolic']}"
+        )
+
         d["alert"] = check_abnormal({
             "heart_rate": r["heart_rate"],
             "oxygen_level": r["oxygen_level"],
             "temperature": r["temperature"],
             "bp_sys": r["blood_pressure_systolic"]
         })
-        d["timestamp"] = str(r["timestamp"])
 
+        d["timestamp"] = str(r["timestamp"])
         data.append(d)
 
     return jsonify(data)
+
 
 @app.route("/api/history/<int:patient_id>")
 def get_history(patient_id):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    cur.execute(
+        """
         SELECT timestamp, heart_rate, oxygen_level, temperature
         FROM patient_vitals
         WHERE patient_id = %s
         AND timestamp >= NOW() - INTERVAL '5 minutes'
         ORDER BY timestamp ASC
-    """, (patient_id,))
+        """,
+        (patient_id,)
+    )
 
     rows = cur.fetchall()
     conn.close()
@@ -85,6 +108,7 @@ def get_history(patient_id):
     }
 
     return jsonify(data)
+
 
 # REAL-TIME SIMULATOR
 def simulator():
@@ -111,12 +135,23 @@ def simulator():
                 sys = random.randint(90, 170)
                 dia = random.randint(60, 110)
 
-                cur.execute("""
-                    INSERT INTO patient_vitals 
-                    (patient_id, patient_name, heart_rate, oxygen_level, temperature,
-                     blood_pressure_systolic, blood_pressure_diastolic, timestamp)
+                cur.execute(
+                    """
+                    INSERT INTO patient_vitals
+                    (
+                        patient_id,
+                        patient_name,
+                        heart_rate,
+                        oxygen_level,
+                        temperature,
+                        blood_pressure_systolic,
+                        blood_pressure_diastolic,
+                        timestamp
+                    )
                     VALUES (%s,%s,%s,%s,%s,%s,%s,NOW())
-                """, (pid, name, hr, ox, temp, sys, dia))
+                    """,
+                    (pid, name, hr, ox, temp, sys, dia)
+                )
 
                 data = {
                     "patient_id": pid,
@@ -135,7 +170,6 @@ def simulator():
                 }
 
                 print("LIVE:", data)
-
                 socketio.emit("new_data", data)
 
             conn.commit()
@@ -147,8 +181,8 @@ def simulator():
 
         time.sleep(3)
 
-# START
-socketio.start_background_task(simulator)
 
+# START
 if __name__ == "__main__":
+    socketio.start_background_task(simulator)
     socketio.run(app, debug=True)
