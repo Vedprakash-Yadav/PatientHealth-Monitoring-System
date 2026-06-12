@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Patient Monitoring</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Real-Time Patient Monitoring</h1>
+
+    <h2>Latest Vitals</h2>
+    <table id="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Heart Rate</th>
+                <th>BP</th>
+                <th>Oxygen</th>
+                <th>Temp</th>
+                <th>Time</th>
+                <th>Alert</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- ✅ ADDED (no UI redesign, just below table) -->
+    <div style="margin-top: 30px;">
+        <h2>Patient Trends</h2>
+
+        <label>Select Patient:</label>
+        <select id="patientSelect"></select>
+
+        <div id="hrChart" style="margin-top:20px;"></div>
+        <div id="oxChart"></div>
+        <div id="tempChart"></div>
+    </div>
+
+</div>
+
+<script src="/static/script.js"></script>
+
+</body>
+</html>
