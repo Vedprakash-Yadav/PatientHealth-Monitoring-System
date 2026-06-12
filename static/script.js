@@ -1,207 +1,95 @@
-// const socket = io("http://127.0.0.1:5000");
+// ------------------------------
+// Socket.IO
+// ------------------------------
 
-// const tableBody = document.querySelector("#table tbody");
-// const dropdown = document.getElementById("patientSelect");
+let socket = null;
 
-// let patientMap = {};
-// let selectedPatient = null;
+if (typeof io !== "undefined") {
+    socket = io({
+        transports: ["websocket", "polling"]
+    });
 
-// // 🔹 Debug connection
-// socket.on("connect", () => {
-//     console.log("✅ Connected to server:", socket.id);
-// });
+    console.log("✅ Socket.IO loaded");
+} else {
+    console.error("❌ Socket.IO failed to load");
+}
 
-// // 🔹 Add patients to dropdown
-// function addToDropdown(d) {
-//     if (!patientMap[d.patient_id]) {
-//         patientMap[d.patient_id] = d.patient_name;
-
-//         const option = document.createElement("option");
-//         option.value = d.patient_id;
-//         option.text = d.patient_name;
-
-//         dropdown.appendChild(option);
-//     }
-// }
-
-// // 🔹 Table update (UNCHANGED LOGIC)
-// function createOrUpdateRow(d) {
-//     if (!d) return;
-
-//     addToDropdown(d);
-
-//     let row = document.getElementById("patient-" + d.patient_id);
-
-//     if (!row) {
-//         row = document.createElement("tr");
-//         row.id = "patient-" + d.patient_id;
-
-//         row.innerHTML = `
-//             <td class="name"></td>
-//             <td class="id"></td>
-//             <td class="hr"></td>
-//             <td class="bp"></td>
-//             <td class="ox"></td>
-//             <td class="temp"></td>
-//             <td class="time"></td>
-//             <td class="status"></td>
-//         `;
-
-//         tableBody.appendChild(row);
-//     }
-
-//     row.querySelector(".name").innerText = d.patient_name;
-//     row.querySelector(".id").innerText = d.patient_id;
-//     row.querySelector(".hr").innerText = d.heart_rate;
-//     row.querySelector(".bp").innerText = d.blood_pressure;
-//     row.querySelector(".ox").innerText = d.oxygen_level;
-//     row.querySelector(".temp").innerText = d.temperature;
-//     row.querySelector(".time").innerText = d.timestamp;
-//     row.querySelector(".status").innerText = d.alert;
-
-//     row.querySelector(".hr").className = "hr " + ((d.heart_rate > 100 || d.heart_rate < 60) ? "alert" : "");
-//     row.querySelector(".ox").className = "ox " + (d.oxygen_level < 95 ? "alert" : "");
-//     row.querySelector(".temp").className = "temp " + ((d.temperature > 37.5 || d.temperature < 36) ? "alert" : "");
-//     row.querySelector(".status").className = "status " + (d.alert === "Need Attention" ? "alert" : "");
-// }
-
-// // 🔹 Load last 5 minutes data
-// function loadCharts(patientId) {
-//     fetch(`/api/history/${patientId}`)
-//         .then(res => res.json())
-//         .then(data => drawCharts(data));
-// }
-
-// // 🔹 Draw graphs
-// function drawCharts(data) {
-
-//     const time = data.timestamps.map(t => new Date(t));
-
-//     const commonLayout = {
-//         paper_bgcolor: "#0b0f19",   // full background
-//         plot_bgcolor: "#111827",    // chart area
-//         font: { color: "white" },
-//         xaxis: {
-//             gridcolor: "#333",
-//             zerolinecolor: "#333"
-//         },
-//         yaxis: {
-//             gridcolor: "#333",
-//             zerolinecolor: "#333"
-//         },
-//         margin: { t: 40 }
-//     };
-
-//     Plotly.newPlot("hrChart", [{
-//         x: time,
-//         y: data.heart_rate,
-//         mode: "lines+markers",
-//         line: { width: 2 }
-//     }], {
-//         ...commonLayout,
-//         title: "❤️ Heart Rate"
-//     });
-
-//     Plotly.newPlot("oxChart", [{
-//         x: time,
-//         y: data.oxygen,
-//         mode: "lines+markers",
-//         line: { width: 2 }
-//     }], {
-//         ...commonLayout,
-//         title: "🫁 Oxygen Level"
-//     });
-
-//     Plotly.newPlot("tempChart", [{
-//         x: time,
-//         y: data.temperature,
-//         mode: "lines+markers",
-//         line: { width: 2 }
-//     }], {
-//         ...commonLayout,
-//         title: "🌡 Temperature"
-//     });
-// }
-
-// // 🔹 Dropdown selection
-// dropdown.addEventListener("change", (e) => {
-//     selectedPatient = e.target.value;
-//     loadCharts(selectedPatient);
-// });
-
-// // 🔹 Live updates
-// socket.on("new_data", (data) => {
-//     console.log("📡 LIVE:", data);
-
-//     createOrUpdateRow(data);
-
-//     if (selectedPatient && data.patient_id == selectedPatient) {
-//         loadCharts(selectedPatient);
-//     }
-// });
-
-// // 🔹 Initial load
-// fetch("/api/all")
-//     .then(res => res.json())
-//     .then(data => {
-//         console.log("📦 Initial load:", data);
-
-//         data.forEach(createOrUpdateRow);
-
-//         // auto-select first patient
-//         setTimeout(() => {
-//             if (dropdown.options.length > 0) {
-//                 dropdown.selectedIndex = 0;
-//                 selectedPatient = dropdown.value;
-//                 loadCharts(selectedPatient);
-//             }
-//         }, 300);
-//     })
-//     .catch(err => console.error("❌ Fetch error:", err));
-// Auto-connect to the current Render/Local server
-const socket = io();
+// ------------------------------
+// DOM Elements
+// ------------------------------
 
 const tableBody = document.querySelector("#table tbody");
 const dropdown = document.getElementById("patientSelect");
 
-console.log("Table Body:", tableBody);
-
 let patientMap = {};
 let selectedPatient = null;
 
-// Socket connection
-socket.on("connect", () => {
-    console.log("✅ Connected to server:", socket.id);
-});
+// ------------------------------
+// Socket Events
+// ------------------------------
 
-socket.on("connect_error", (err) => {
-    console.error("❌ Socket Error:", err);
-});
+if (socket) {
 
-// Add patients to dropdown
+    socket.on("connect", () => {
+        console.log("✅ Connected:", socket.id);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("⚠️ Disconnected");
+    });
+
+    socket.on("connect_error", (err) => {
+        console.error("❌ Socket Error:", err);
+    });
+
+    socket.on("new_data", (data) => {
+        console.log("📡 LIVE:", data);
+
+        createOrUpdateRow(data);
+
+        if (
+            selectedPatient &&
+            String(data.patient_id) === String(selectedPatient)
+        ) {
+            loadCharts(selectedPatient);
+        }
+    });
+}
+
+// ------------------------------
+// Dropdown
+// ------------------------------
+
 function addToDropdown(d) {
+
     if (!patientMap[d.patient_id]) {
+
         patientMap[d.patient_id] = d.patient_name;
 
         const option = document.createElement("option");
         option.value = d.patient_id;
-        option.text = d.patient_name;
+        option.textContent = d.patient_name;
 
         dropdown.appendChild(option);
     }
 }
 
-// Create or update table row
+// ------------------------------
+// Table Update
+// ------------------------------
+
 function createOrUpdateRow(d) {
+
     if (!d) return;
 
     addToDropdown(d);
 
-    let row = document.getElementById("patient-" + d.patient_id);
+    let row = document.getElementById(`patient-${d.patient_id}`);
 
     if (!row) {
+
         row = document.createElement("tr");
-        row.id = "patient-" + d.patient_id;
+        row.id = `patient-${d.patient_id}`;
 
         row.innerHTML = `
             <td class="name"></td>
@@ -217,14 +105,14 @@ function createOrUpdateRow(d) {
         tableBody.appendChild(row);
     }
 
-    row.querySelector(".name").innerText = d.patient_name;
-    row.querySelector(".id").innerText = d.patient_id;
-    row.querySelector(".hr").innerText = d.heart_rate;
-    row.querySelector(".bp").innerText = d.blood_pressure;
-    row.querySelector(".ox").innerText = d.oxygen_level;
-    row.querySelector(".temp").innerText = d.temperature;
-    row.querySelector(".time").innerText = d.timestamp;
-    row.querySelector(".status").innerText = d.alert;
+    row.querySelector(".name").textContent = d.patient_name;
+    row.querySelector(".id").textContent = d.patient_id;
+    row.querySelector(".hr").textContent = d.heart_rate;
+    row.querySelector(".bp").textContent = d.blood_pressure;
+    row.querySelector(".ox").textContent = d.oxygen_level;
+    row.querySelector(".temp").textContent = d.temperature;
+    row.querySelector(".time").textContent = d.timestamp;
+    row.querySelector(".status").textContent = d.alert;
 
     row.querySelector(".hr").className =
         "hr " + ((d.heart_rate > 100 || d.heart_rate < 60) ? "alert" : "");
@@ -239,24 +127,42 @@ function createOrUpdateRow(d) {
         "status " + (d.alert === "Need Attention" ? "alert" : "");
 }
 
-// Load patient history
+// ------------------------------
+// History API
+// ------------------------------
+
 function loadCharts(patientId) {
+
     fetch(`/api/history/${patientId}`)
-        .then(res => {
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}`);
+        .then(response => {
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
-            return res.json();
+
+            return response.json();
         })
         .then(data => {
+
             console.log("📈 History:", data);
+
             drawCharts(data);
         })
-        .catch(err => console.error("❌ History Error:", err));
+        .catch(error => {
+            console.error("❌ History Error:", error);
+        });
 }
 
-// Draw charts
+// ------------------------------
+// Charts
+// ------------------------------
+
 function drawCharts(data) {
+
+    if (!data.timestamps || data.timestamps.length === 0) {
+        return;
+    }
+
     const time = data.timestamps.map(t => new Date(t));
 
     const commonLayout = {
@@ -264,88 +170,97 @@ function drawCharts(data) {
         plot_bgcolor: "#111827",
         font: { color: "white" },
         xaxis: {
-            gridcolor: "#333",
-            zerolinecolor: "#333"
+            gridcolor: "#333"
         },
         yaxis: {
-            gridcolor: "#333",
-            zerolinecolor: "#333"
+            gridcolor: "#333"
         },
-        margin: { t: 40 }
+        margin: {
+            t: 50
+        }
     };
 
-    Plotly.newPlot("hrChart", [{
-        x: time,
-        y: data.heart_rate,
-        mode: "lines+markers",
-        line: { width: 2 }
-    }], {
-        ...commonLayout,
-        title: "❤️ Heart Rate"
-    });
+    Plotly.newPlot(
+        "hrChart",
+        [{
+            x: time,
+            y: data.heart_rate,
+            mode: "lines+markers"
+        }],
+        {
+            ...commonLayout,
+            title: "Heart Rate"
+        }
+    );
 
-    Plotly.newPlot("oxChart", [{
-        x: time,
-        y: data.oxygen,
-        mode: "lines+markers",
-        line: { width: 2 }
-    }], {
-        ...commonLayout,
-        title: "🫁 Oxygen Level"
-    });
+    Plotly.newPlot(
+        "oxChart",
+        [{
+            x: time,
+            y: data.oxygen,
+            mode: "lines+markers"
+        }],
+        {
+            ...commonLayout,
+            title: "Oxygen Level"
+        }
+    );
 
-    Plotly.newPlot("tempChart", [{
-        x: time,
-        y: data.temperature,
-        mode: "lines+markers",
-        line: { width: 2 }
-    }], {
-        ...commonLayout,
-        title: "🌡 Temperature"
-    });
+    Plotly.newPlot(
+        "tempChart",
+        [{
+            x: time,
+            y: data.temperature,
+            mode: "lines+markers"
+        }],
+        {
+            ...commonLayout,
+            title: "Temperature"
+        }
+    );
 }
 
-// Dropdown selection
+// ------------------------------
+// Dropdown Change
+// ------------------------------
+
 dropdown.addEventListener("change", (e) => {
+
     selectedPatient = e.target.value;
-    loadCharts(selectedPatient);
-});
 
-// Live updates
-socket.on("new_data", (data) => {
-    console.log("📡 LIVE:", data);
-
-    createOrUpdateRow(data);
-
-    if (selectedPatient && data.patient_id == selectedPatient) {
+    if (selectedPatient) {
         loadCharts(selectedPatient);
     }
 });
 
-// Initial load
-fetch("/api/all")
-    .then(res => {
-        console.log("📥 API Status:", res.status);
+// ------------------------------
+// Initial Data Load
+// ------------------------------
 
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
+fetch("/api/all")
+    .then(response => {
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
         }
 
-        return res.json();
+        return response.json();
     })
     .then(data => {
-        console.log("📦 Initial load:", data);
+
+        console.log("📦 Initial Data:", data);
 
         data.forEach(createOrUpdateRow);
 
-        setTimeout(() => {
-            if (dropdown.options.length > 0) {
-                dropdown.selectedIndex = 0;
-                selectedPatient = dropdown.value;
-                loadCharts(selectedPatient);
-            }
-        }, 300);
+        if (dropdown.options.length > 1) {
+
+            dropdown.selectedIndex = 1;
+
+            selectedPatient = dropdown.value;
+
+            loadCharts(selectedPatient);
+        }
     })
-    .catch(err => {
-        console.error("❌ Fetch error:", err);
+    .catch(error => {
+        console.error("❌ API Error:", error);
     });

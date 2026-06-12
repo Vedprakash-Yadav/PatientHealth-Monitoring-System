@@ -1,17 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Patient Monitoring</title>
+
     <link rel="stylesheet" href="/static/style.css">
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
+
 <body>
 
 <div class="container">
+
     <h1>Real-Time Patient Monitoring</h1>
 
     <h2>Latest Vitals</h2>
+
     <table id="table">
         <thead>
             <tr>
@@ -28,12 +39,13 @@
         <tbody></tbody>
     </table>
 
-    <!-- ✅ ADDED (no UI redesign, just below table) -->
-    <div style="margin-top: 30px;">
+    <div style="margin-top:30px;">
         <h2>Patient Trends</h2>
 
-        <label>Select Patient:</label>
-        <select id="patientSelect"></select>
+        <label for="patientSelect">Select Patient:</label>
+        <select id="patientSelect">
+            <option value="">Choose Patient</option>
+        </select>
 
         <div id="hrChart" style="margin-top:20px;"></div>
         <div id="oxChart"></div>
