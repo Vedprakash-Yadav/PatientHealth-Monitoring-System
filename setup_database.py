@@ -1,9 +1,9 @@
 import psycopg2
 import os
 
-DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_lJySqHx0Y8Md@ep-aged-fire-ai7o9kjo-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
-
+DATABASE_URL = os.getenv("DATABASE_URL")
 def create_table():
+    print(DATABASE_URL)
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
