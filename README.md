@@ -184,11 +184,11 @@ Displays current patient health metrics and alert status.
 
 ### Dashboard
 
-![Dashboard](screenshots/Dashboard.png)
+![Dashboard](screenshots/Dashboard.jpeg)
 
 ### Patient Trend Charts
 
-![Charts](screenshots/charts.png)
+![Charts](screenshots/charts.jpeg)
 
 ---
 
